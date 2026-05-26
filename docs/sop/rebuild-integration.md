@@ -61,16 +61,9 @@ sequenceDiagram
 
 ### Step 3: Clean up leftover resources
 
-After both teardowns complete, some resources may remain in the RC and MC AWS accounts. Switch to each target account and check for:
+After both teardowns complete, some resources may remain in the RC and MC AWS accounts. The most common leftover is **Secrets Manager secrets** with deletion protection or retention periods, which will cause name conflicts on re-provision.
 
-- **Secrets Manager secrets** with deletion protection or retention periods
-- **RDS snapshots** (final snapshots created during instance deletion)
-- **ENIs** attached to RDS or other managed services
-- **EBS volumes** that were not deleted with their instances
-- **VPC resources** (subnets, internet gateways, NAT gateways, security groups, the VPC itself) if the VPC teardown failed due to dependencies
-- **EKS clusters** or node groups that were not fully deleted
-
-Delete these manually via the AWS Console or CLI. The re-provisioning step will fail if conflicting resources remain (e.g., a VPC with the same CIDR or a security group with the same name).
+Switch to each target account and delete any remaining secrets. If the teardown failed more broadly, also check for other leaked resources (ENIs, EBS volumes, VPC components, EKS clusters) and clean them up.
 
 Tip: to find remaining resources quickly, use [AWS Resource Explorer](https://resource-explorer.console.aws.amazon.com/) in each account.
 
