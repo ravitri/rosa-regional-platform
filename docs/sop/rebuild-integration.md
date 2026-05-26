@@ -6,7 +6,6 @@ Tear down and re-provision the integration environment when it is unrecoverable 
 
 1. AWS Console access to the **central account** (hosts CodePipeline)
 2. AWS Console or CLI access to the **RC and MC target accounts** (for manual cleanup of leftover resources)
-3. [Vault](https://vault.ci.openshift.org) access to update CI credentials after rebuild
 
 ## Procedure
 
@@ -18,8 +17,6 @@ sequenceDiagram
     participant Console as AWS Console<br/>(Central Account)
     participant MC as MC Pipeline<br/>(mc01-pipe)
     participant RC as RC Pipeline<br/>(regional-pipe)
-    participant Vault
-
     Operator->>Console: Start MC pipeline (IS_DESTROY=true)
     Console->>MC: Trigger teardown
     MC-->>Console: Complete (may partially fail)
@@ -33,7 +30,6 @@ sequenceDiagram
     RC-->>Console: Complete
     Console->>MC: Provision MC
     MC-->>Console: Complete
-    Operator->>Vault: Update api_url with new API Gateway URL
     Operator->>Operator: Trigger nightly-integration to verify
 ```
 
@@ -96,22 +92,6 @@ Trigger the parent provisioner pipeline to re-create the RC and MC pipelines and
    If the provision fails due to leftover resources from Step 3, delete the conflicting resources and re-trigger the failed pipeline.
 
 ## Post-Rebuild
-
-### Update Vault credentials
-
-The API Gateway URL changes on every rebuild. The nightly-integration CI job reads it from the Vault secret. Update it so CI tests pass:
-
-1. Get the new API Gateway URL from the RC pipeline's Terraform output. Connect to the RC bastion and run:
-
-   ```bash
-   # From the RC bastion (make int-bastion-rc)
-   # Or read from the Terraform state in the RC account:
-   aws s3 cp s3://terraform-state-<RC_ACCOUNT_ID>-us-east-1/regional-cluster/regional.tfstate - \
-     | jq -r '.outputs.api_gateway_invoke_url.value'
-   ```
-
-2. Update the Vault secret at [`selfservice/cluster-secrets-rosa-regional-platform-int/integration-creds`](https://vault.ci.openshift.org/ui/vault/secrets/kv/kv/list/selfservice/cluster-secrets-rosa-regional-platform-int/):
-   - Edit the `api_url` field with the new API Gateway URL
 
 ### Verify the rebuild
 
