@@ -45,7 +45,7 @@ sequenceDiagram
 
 3. Click **Release change** (or **Start execution** in the pipeline detail view). When prompted for pipeline variables, set:
 
-   ```
+   ```text
    IS_DESTROY = true
    ```
 
@@ -57,7 +57,7 @@ sequenceDiagram
 
 2. Start execution with:
 
-   ```
+   ```text
    IS_DESTROY = true
    ```
 
