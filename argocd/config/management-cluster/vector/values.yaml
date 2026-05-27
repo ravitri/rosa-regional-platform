@@ -50,6 +50,8 @@ sigv4ProxyLogs:
 vector:
   role: Agent
 
+  priorityClassName: system-node-critical
+
   podSecurityContext:
     runAsUser: 0
     runAsGroup: 0
