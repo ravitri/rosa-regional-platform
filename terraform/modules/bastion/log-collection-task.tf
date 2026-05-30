@@ -42,12 +42,12 @@ resource "aws_ecs_task_definition" "log_collector" {
           fi
           echo "Resolved namespaces: $INSPECT_NAMESPACES"
 
-          # Run oc adm inspect
+          # Run oc adm inspect (5 min timeout to prevent hangs on large clusters)
           echo "Running oc adm inspect..."
           # shellcheck disable=SC2086
-          oc adm inspect $INSPECT_NAMESPACES --dest-dir=/tmp/inspect-logs || true
+          timeout 300 oc adm inspect $INSPECT_NAMESPACES --dest-dir=/tmp/inspect-logs || true
 
-          # Collect cluster-scoped and CRD resources in batches of 5 (missing CRDs are silently skipped)
+          # Collect cluster-scoped and CRD resources in batches of 5
           resources=(
             nodes
             hostedclusters.hypershift.openshift.io
@@ -86,7 +86,7 @@ resource "aws_ecs_task_definition" "log_collector" {
           )
           batch=0
           for resource in "$${resources[@]}"; do
-            oc adm inspect "$resource" --all-namespaces --dest-dir=/tmp/inspect-logs 2>/dev/null || true &
+            timeout 180 oc adm inspect "$resource" --all-namespaces --dest-dir=/tmp/inspect-logs 2>/dev/null || true &
             batch=$((batch + 1))
             if [[ $batch -ge 5 ]]; then
               wait
