@@ -17,6 +17,8 @@ global:
 vector:
   role: Agent
 
+  priorityClassName: system-node-critical
+
   # Pod-level security context.
   # Vector needs root to read /var/log and /var/lib/docker on host nodes.
   # Matches CLO/Vector behavior on OpenShift where the collector runs privileged.
