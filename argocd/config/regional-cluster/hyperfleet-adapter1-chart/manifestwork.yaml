@@ -70,6 +70,34 @@ spec:
           cluster_id: "{{ .clusterId }}"
           cluster_name: "{{ .clusterName }}"
 
+      - apiVersion: v1
+        kind: ConfigMap
+        metadata:
+          name: "aws-iam-auth-config"
+          namespace: "clusters-{{ .clusterId }}"
+          labels:
+            hyperfleet.io/cluster-id: "{{ .clusterId }}"
+          annotations:
+            hyperfleet.io/generation: "{{ .generation }}"
+            # Enqueues the HostedCluster for reconciliation when this ConfigMap is
+            # created/updated by ManifestWork, ensuring the HC controller syncs it
+            # to the HCP namespace even if the initial reconcile raced ahead of
+            # ManifestWork applying it.
+            hypershift.openshift.io/cluster: "clusters-{{ .clusterId }}/{{ .clusterName }}"
+        data:
+          config.yaml: |
+            clusterID: {{ .clusterId }}
+            server:
+{{ if .creatorARN }}
+              mapUsers:
+                - userARN: {{ .creatorARN }}
+                  username: cluster-creator
+                  groups:
+                    - system:masters
+{{ else }}
+              mapUsers: []
+{{ end }}
+
       - apiVersion: external-secrets.io/v1
         kind: ExternalSecret
         metadata:
@@ -260,29 +288,6 @@ spec:
         type: Opaque
         data:
           id_rsa.pub: ""
-
-      - apiVersion: v1
-        kind: ConfigMap
-        metadata:
-          name: "aws-iam-auth-config"
-          namespace: "clusters-{{ .clusterId }}"
-          labels:
-            hyperfleet.io/cluster-id: "{{ .clusterId }}"
-          annotations:
-            hyperfleet.io/generation: "{{ .generation }}"
-        data:
-          config.yaml: |
-            clusterID: {{ .clusterId }}
-            server:
-{{ if .creatorARN }}
-              mapUsers:
-                - userARN: {{ .creatorARN }}
-                  username: cluster-creator
-                  groups:
-                    - system:masters
-{{ else }}
-              mapUsers: []
-{{ end }}
 
   deleteOption:
       propagationPolicy: "Foreground"
